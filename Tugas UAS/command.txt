@@ -1,0 +1,62 @@
+
+PD
+./bin/pd-server --name=pd1 \
+                --data-dir=pd \
+                --client-urls="http://192.168.16.42:2379" \
+                --peer-urls="http://192.168.16.42:2380" \
+                --initial-cluster="pd1=http://192.168.16.42:2380,pd2=http://192.168.16.43:2380,pd3=http://192.168.16.44:2380" \
+                --log-file=pd.log &
+
+./bin/pd-server --name=pd2\
+                --data-dir=pd \
+                --client-urls="http://192.168.16.43:2379" \
+                --peer-urls="http://192.168.16.43:2380" \
+                --initial-cluster="pd1=http://192.168.16.42:2380,pd2=http://192.168.16.43:2380,pd3=http://192.168.16.44:2380" \
+                --log-file=pd.log &
+
+./bin/pd-server --name=pd3 \
+                --data-dir=pd \
+                --client-urls="http://192.168.16.44:2379" \
+                --peer-urls="http://192.168.16.44:2380" \
+                --initial-cluster="pd1=http://192.168.16.42:2380,pd2=http://192.168.16.43:2380,pd3=http://192.168.16.44:2380" \
+                --log-file=pd.log &
+
+TiKv
+./bin/tikv-server --pd="192.168.16.42:2379,192.168.16.43:2379.192.168.16.44:2379" \
+                  --addr="192.168.16.45:20160" \
+                  --data-dir=tikv \
+                  --log-file=tikv.log &
+
+./bin/tikv-server --pd="192.168.16.42:2379,192.168.16.43:2379.192.168.16.44:2379" \
+                  --addr="192.168.16.46:20160" \
+                  --data-dir=tikv \
+                  --log-file=tikv.log &
+
+./bin/tikv-server --pd="192.168.16.42:2379,192.168.16.43:2379.192.168.16.44:2379" \
+                  --addr="192.168.16.47:20160" \
+                  --data-dir=tikv \
+                  --log-file=tikv.log &
+
+Tidb
+./bin/tidb-server --store=tikv \
+                  --path="192.168.16.42:2379" \
+                  --log-file=tidb.log &
+
+
+cd ..
+cd node_exporter-0.15.2.linux-amd64
+./node_exporter --web.listen-address=":9100" \
+        --log.level="info" &
+
+prometheus
+
+./prometheus \
+    --config.file="./prometheus.yml" \
+    --web.listen-address=":9090" \
+    --web.external-url="http://192.168.16.42:9090/" \
+    --web.enable-admin-api \
+    --log.level="info" \
+    --storage.tsdb.path="./data.metrics" \
+    --storage.tsdb.retention="15d" &
+
+
